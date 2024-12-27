@@ -1,0 +1,14 @@
+[package]
+name = "sales_taxes_kata"
+version = "0.1.0"
+edition = "2021"
+[[bin]]
+name = "sales_taxes_kata"
+src = "src/main.rs"
+
+[lib]
+name = "sales_taxes_kata"
+path = "src/lib.rs"
+
+[dependencies]
+
