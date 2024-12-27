@@ -11,4 +11,4 @@ name = "sales_taxes_kata"
 path = "src/lib.rs"
 
 [dependencies]
-
+approx = "*"
