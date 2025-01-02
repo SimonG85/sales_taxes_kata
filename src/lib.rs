@@ -42,20 +42,21 @@ fn round_numbers(number: f64) -> f64 {
 
 impl Tax for Item {
     fn get_prices(&self) -> (f64, f64) {
-        //     match (&self.category, &self.imported) {
-        //         (Category::Book | Category::Food | Category::Medical, Imported::No) => self.clean_price,
-        //         (Category::Other(_), Imported::No) => {
-        //             self.clean_price + round_numbers(self.clean_price * 0.10)
-        //         }
-        //         (Category::Book | Category::Food | Category::Medical, Imported::Yes) => {
-        //             self.clean_price + round_numbers(self.clean_price * (0.05))
-        //         }
-        //         (Category::Other(_), Imported::Yes) => {
-        //             self.clean_price + round_numbers(self.clean_price * (0.10 + 0.05))
-        //         }
-        //     }
-        // }
-        (1.0, 1.0)
+        match (&self.category, &self.imported) {
+            (Category::Book | Category::Food | Category::Medical, Imported::No) => {
+                (self.clean_price, 0.0)
+            }
+            (Category::Other(_), Imported::No) => {
+                (self.clean_price, round_numbers(self.clean_price * 0.10))
+            }
+            (Category::Book | Category::Food | Category::Medical, Imported::Yes) => {
+                (self.clean_price, round_numbers(self.clean_price * (0.05)))
+            }
+            (Category::Other(_), Imported::Yes) => (
+                self.clean_price,
+                round_numbers(self.clean_price * (0.10 + 0.05)),
+            ),
+        }
     }
 }
 
@@ -75,7 +76,7 @@ mod tests {
     fn test_music_cd() {
         let music_cd = Item::new(14.99, Imported::No, Category::Other("CD".to_string())).unwrap();
         let (clean_price, tax) = music_cd.get_prices();
-        let expected = (12.49, 1.5);
+        let expected = (14.99, 1.5);
         assert_relative_eq!(clean_price, expected.0, epsilon = f64::EPSILON);
         assert_relative_eq!(tax, expected.1, epsilon = f64::EPSILON);
     }
