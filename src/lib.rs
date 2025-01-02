@@ -139,6 +139,13 @@ where
     }
 }
 
+impl FromStr for Basket<Item> {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Basket::new(vec![]))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -353,5 +360,22 @@ Sales Taxes: 6.70
 Total: 74.68
 "
         );
+    }
+}
+
+#[cfg(test)]
+mod string_to_basket_tests {
+    use super::*;
+    use approx::assert_relative_eq;
+    #[test]
+    fn test_parse_basket() {
+        let input = "1 imported bottle of perfume at 27.99
+1 bottle of perfume at 18.99
+1 packet of headache pills at 9.75
+1 box of imported chocolates at 11.25";
+        let basket = Basket::<Item>::from_str(input).unwrap();
+        assert_eq!(basket.elements.len(), 4);
+        assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
+        assert_relative_eq!(basket.get_tax(), 6.65, epsilon = f64::EPSILON);
     }
 }
