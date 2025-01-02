@@ -49,7 +49,12 @@ impl ToString for Item {
             "1 "
         };
 
-        format!("{}{}: {}", prefix, name, self.get_prices().0)
+        format!(
+            "{}{}: {}",
+            prefix,
+            name,
+            ((self.get_prices().0 + self.get_prices().1) * 100.0).round() / 100.0
+        )
     }
 }
 
@@ -133,8 +138,14 @@ where
 {
     fn to_string(&self) -> String {
         let mut string_element: Vec<String> = self.elements.iter().map(|s| s.to_string()).collect();
-        string_element.push(format!("Sales Taxes: {}", self.get_tax()));
-        string_element.push(format!("Total: {}", self.get_total()));
+        string_element.push(format!(
+            "Sales Taxes: {}",
+            (self.get_tax() * 100.0).round() / 100.0
+        ));
+        string_element.push(format!(
+            "Total: {}",
+            (self.get_total() * 100.0).round() / 100.0
+        ));
         string_element.join("\n")
     }
 }
@@ -142,7 +153,8 @@ where
 impl FromStr for Basket<Item> {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Basket::new(vec![]))
+        let items: Result<Vec<Item>, _> = s.lines().map(|line| Item::from_str(line)).collect();
+        items.map(Basket::new)
     }
 }
 
@@ -253,7 +265,7 @@ mod multiple_item_tests {
         let taxes =
             imported_perf_prices.1 + perf_prices.1 + pills_prices.1 + imported_choc_prices.1;
         assert_relative_eq!(clean_price, 67.98, epsilon = f64::EPSILON);
-        assert_relative_eq!(taxes, 6.70, epsilon = f64::EPSILON);
+        assert_relative_eq!(taxes, 6.65, epsilon = f64::EPSILON);
     }
 }
 
@@ -269,7 +281,7 @@ mod item_to_string_tests {
     #[test]
     fn test_music_cd() {
         let music_cd =
-            Item::new(16.49, Imported::No, Category::Other("music CD".to_string())).unwrap();
+            Item::new(14.99, Imported::No, Category::Other("music CD".to_string())).unwrap();
         let music_cd_to_string = "1 music CD: 16.49".to_string();
         assert_eq!(music_cd.to_string(), music_cd_to_string);
     }
@@ -348,17 +360,16 @@ mod basket_tests {
             headache_pills,
             imported_chocolates,
         ]);
-        assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
-        assert_relative_eq!(basket.get_tax(), 6.70, epsilon = f64::EPSILON);
+        assert_relative_eq!(basket.get_total(), 74.63, epsilon = f64::EPSILON);
+        assert_relative_eq!(basket.get_tax(), 6.65, epsilon = f64::EPSILON);
         assert_eq!(
             basket.to_string(),
             "1 imported bottle of perfume: 32.19
 1 bottle of perfume: 20.89
 1 packet of headache pills: 9.75
-1 imported box of chocolates: 11.85
-Sales Taxes: 6.70
-Total: 74.68
-"
+1 imported box of chocolates: 11.8
+Sales Taxes: 6.65
+Total: 74.63"
         );
     }
 }
@@ -375,7 +386,7 @@ mod string_to_basket_tests {
 1 box of imported chocolates at 11.25";
         let basket = Basket::<Item>::from_str(input).unwrap();
         assert_eq!(basket.elements.len(), 4);
-        assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
+        assert_relative_eq!(basket.get_total(), 74.63, epsilon = f64::EPSILON);
         assert_relative_eq!(basket.get_tax(), 6.65, epsilon = f64::EPSILON);
     }
 }
