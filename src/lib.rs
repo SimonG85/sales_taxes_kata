@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 /// This lib allows to compute price after tax of an item
 /// and a basket of items.
 
@@ -104,7 +106,10 @@ where
     T: Tax + ToString,
 {
     fn to_string(&self) -> String {
-        "".to_string()
+        let mut string_element: Vec<String> = self.elements.iter().map(|s| s.to_string()).collect();
+        string_element.push(format!("Sales Taxes: {}", self.get_tax()));
+        string_element.push(format!("Total: {}", self.get_total()));
+        string_element.join("\n")
     }
 }
 
@@ -258,7 +263,7 @@ mod basket_tests {
         let headache_pills = Item::new(
             9.75,
             Imported::No,
-            Category::Medical("packet of headache".to_string()),
+            Category::Medical("packet of headache pills".to_string()),
         )
         .unwrap();
         let imported_chocolates = Item::new(
