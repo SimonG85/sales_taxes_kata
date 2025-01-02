@@ -80,7 +80,27 @@ impl Tax for Item {
 impl FromStr for Item {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Item::new(0.0, Imported::Yes, Category::Book("".to_string())).map_err(|e| e.to_string())
+        let components: Vec<&str> = s.split(" at ").collect();
+        if components.len() != 2 {
+            return Err("Invalid string: missing 'at'".to_string());
+        }
+        let descr = components[0];
+        let price = components[1].parse().map_err(|_| "Price is not valid")?;
+        let imported = if descr.contains("imported") {
+            Imported::Yes
+        } else {
+            Imported::No
+        };
+        let category = if descr.contains("pills") {
+            Category::Medical(descr.to_string())
+        } else if descr.contains("chocolate") {
+            Category::Food(descr.to_string())
+        } else if descr.contains("perfume") {
+            Category::Other(descr.to_string())
+        } else {
+            Category::Other(descr.to_string())
+        };
+        Item::new(price, imported, category).map_err(|e| e.to_string())
     }
 }
 
