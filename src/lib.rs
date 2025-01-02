@@ -255,17 +255,35 @@ mod basket_tests {
             Category::Other("bottle of perfume".to_string()),
         )
         .unwrap();
-        let headache_pills =
-            Item::new(9.75, Imported::No, Category::Medical("".to_string())).unwrap();
-        let imported_chocolates =
-            Item::new(11.25, Imported::Yes, Category::Food("".to_string())).unwrap();
+        let headache_pills = Item::new(
+            9.75,
+            Imported::No,
+            Category::Medical("packet of headache".to_string()),
+        )
+        .unwrap();
+        let imported_chocolates = Item::new(
+            11.25,
+            Imported::Yes,
+            Category::Food("box of chocolates".to_string()),
+        )
+        .unwrap();
         let basket = Basket::new(vec![
             imported_perfume,
             perfume,
             headache_pills,
             imported_chocolates,
         ]);
-        assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
-        assert_relative_eq!(basket.get_tax(), 6.70, epsilon = f64::EPSILON);
+        // assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
+        // assert_relative_eq!(basket.get_tax(), 6.70, epsilon = f64::EPSILON);
+        assert_eq!(
+            basket.to_string(),
+            "1 imported bottle of perfume: 32.19
+1 bottle of perfume: 20.89
+1 packet of headache pills: 9.75
+1 imported box of chocolates: 11.85
+Sales Taxes: 6.70
+Total: 74.68
+"
+        );
     }
 }
