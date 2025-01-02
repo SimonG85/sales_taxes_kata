@@ -1,7 +1,6 @@
-use std::fmt::format;
-
 /// This lib allows to compute price after tax of an item
 /// and a basket of items.
+use std::str::FromStr;
 
 enum Imported {
     Yes,
@@ -75,6 +74,13 @@ impl Tax for Item {
                 round_numbers(self.clean_price * (0.10 + 0.05)),
             ),
         }
+    }
+}
+
+impl FromStr for Item {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Item::new(0.0, Imported::Yes, Category::Book("".to_string())).map_err(|e| e.to_string())
     }
 }
 
@@ -243,6 +249,21 @@ mod item_to_string_tests {
 }
 
 #[cfg(test)]
+mod string_to_item_tests {
+    use super::*;
+    use approx::assert_relative_eq;
+    #[test]
+    fn test_parse_item_imported_perfume() {
+        let input = "1 imported bottle of perfume at 27.99";
+        let item = Item::from_str(input).unwrap();
+
+        assert!(matches!(item.imported, Imported::Yes));
+        assert!(matches!(item.category, Category::Other(_)));
+        assert_relative_eq!(item.clean_price, 27.99, epsilon = f64::EPSILON);
+    }
+}
+
+#[cfg(test)]
 mod basket_tests {
     use super::*;
     use approx::assert_relative_eq;
@@ -278,8 +299,8 @@ mod basket_tests {
             headache_pills,
             imported_chocolates,
         ]);
-        // assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
-        // assert_relative_eq!(basket.get_tax(), 6.70, epsilon = f64::EPSILON);
+        assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
+        assert_relative_eq!(basket.get_tax(), 6.70, epsilon = f64::EPSILON);
         assert_eq!(
             basket.to_string(),
             "1 imported bottle of perfume: 32.19
