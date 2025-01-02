@@ -76,8 +76,36 @@ impl Tax for Item {
     }
 }
 
-struct Basket<T: Tax> {
-    elements: [T],
+struct Basket<T: Tax + ToString> {
+    elements: Vec<T>,
+}
+
+impl<T> Basket<T>
+where
+    T: Tax + ToString,
+{
+    fn new(elements: Vec<T>) -> Self {
+        Self { elements }
+    }
+    fn get_total(&self) -> f64 {
+        self.elements
+            .iter()
+            .fold(0.0, |acc, x| acc + x.get_prices().0 + x.get_prices().1)
+    }
+    fn get_tax(&self) -> f64 {
+        self.elements
+            .iter()
+            .fold(0.0, |acc, x| acc + x.get_prices().1)
+    }
+}
+
+impl<T> ToString for Basket<T>
+where
+    T: Tax + ToString,
+{
+    fn to_string(&self) -> String {
+        "".to_string()
+    }
 }
 
 #[cfg(test)]
@@ -206,5 +234,38 @@ mod item_to_string_tests {
             Item::new(16.49, Imported::No, Category::Other("music CD".to_string())).unwrap();
         let music_cd_to_string = "1 music CD: 16.49".to_string();
         assert_eq!(music_cd.to_string(), music_cd_to_string);
+    }
+}
+
+#[cfg(test)]
+mod basket_tests {
+    use super::*;
+    use approx::assert_relative_eq;
+    #[test]
+    fn test_total() {
+        let imported_perfume = Item::new(
+            27.99,
+            Imported::Yes,
+            Category::Other("bottle of perfume".to_string()),
+        )
+        .unwrap();
+        let perfume = Item::new(
+            18.99,
+            Imported::No,
+            Category::Other("bottle of perfume".to_string()),
+        )
+        .unwrap();
+        let headache_pills =
+            Item::new(9.75, Imported::No, Category::Medical("".to_string())).unwrap();
+        let imported_chocolates =
+            Item::new(11.25, Imported::Yes, Category::Food("".to_string())).unwrap();
+        let basket = Basket::new(vec![
+            imported_perfume,
+            perfume,
+            headache_pills,
+            imported_chocolates,
+        ]);
+        assert_relative_eq!(basket.get_total(), 74.68, epsilon = f64::EPSILON);
+        assert_relative_eq!(basket.get_tax(), 6.70, epsilon = f64::EPSILON);
     }
 }
