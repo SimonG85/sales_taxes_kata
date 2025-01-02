@@ -170,3 +170,21 @@ mod multiple_item_tests {
         assert_relative_eq!(taxes, 6.70, epsilon = f64::EPSILON);
     }
 }
+
+#[cfg(test)]
+mod item_to_string_tests {
+    use super::*;
+    #[test]
+    fn test_book() {
+        let book = Item::new(12.49, Imported::No, Category::Book).unwrap();
+        let book_to_string = "1 book at 12.49".to_string();
+        assert_eq!(book.to_string(), book_to_string);
+    }
+    #[test]
+    fn test_music_cd() {
+        let music_cd =
+            Item::new(16.49, Imported::No, Category::Other("music CD".to_string())).unwrap();
+        let music_cd_to_string = "1 music CD at 16.49".to_string();
+        assert_eq!(music_cd.to_string(), music_cd_to_string);
+    }
+}
