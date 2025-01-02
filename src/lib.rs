@@ -60,6 +60,10 @@ impl Tax for Item {
     }
 }
 
+struct Basket<T: Tax> {
+    elements: [T],
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -74,7 +78,8 @@ mod tests {
     }
     #[test]
     fn test_music_cd() {
-        let music_cd = Item::new(14.99, Imported::No, Category::Other("CD".to_string())).unwrap();
+        let music_cd =
+            Item::new(14.99, Imported::No, Category::Other("music CD".to_string())).unwrap();
         let (clean_price, tax) = music_cd.get_prices();
         let expected = (14.99, 1.5);
         assert_relative_eq!(clean_price, expected.0, epsilon = f64::EPSILON);
@@ -90,8 +95,12 @@ mod tests {
     }
     #[test]
     fn test_imported_perfume() {
-        let imported_perfume =
-            Item::new(47.50, Imported::Yes, Category::Other("Perfume".to_string())).unwrap();
+        let imported_perfume = Item::new(
+            47.50,
+            Imported::Yes,
+            Category::Other("bottle of perfume".to_string()),
+        )
+        .unwrap();
         let (clean_price, tax) = imported_perfume.get_prices();
         let expected = (47.50, 7.15);
         assert_relative_eq!(clean_price, expected.0, epsilon = f64::EPSILON);
@@ -100,7 +109,7 @@ mod tests {
 }
 
 #[cfg(test)]
-mod acceptance_tests {
+mod multiple_item_tests {
     use super::*;
     use approx::assert_relative_eq;
     #[test]
@@ -120,8 +129,12 @@ mod acceptance_tests {
     fn test_purchase_2() {
         let chocolates_box = Item::new(10.00, Imported::Yes, Category::Food).unwrap();
         let choc_box_prices = chocolates_box.get_prices();
-        let imported_perfume =
-            Item::new(47.50, Imported::Yes, Category::Other("Perfume".to_string())).unwrap();
+        let imported_perfume = Item::new(
+            47.50,
+            Imported::Yes,
+            Category::Other("bottle of perfume".to_string()),
+        )
+        .unwrap();
         let imported_perf_prices = imported_perfume.get_prices();
         let clean_price = choc_box_prices.0 + imported_perf_prices.0;
         let taxes = choc_box_prices.1 + imported_perf_prices.1;
@@ -130,13 +143,17 @@ mod acceptance_tests {
     }
     #[test]
     fn test_purchase_3() {
-        let imported_perfume =
-            Item::new(27.99, Imported::Yes, Category::Other("Perfume".to_string())).unwrap();
+        let imported_perfume = Item::new(
+            27.99,
+            Imported::Yes,
+            Category::Other("bottle of perfume".to_string()),
+        )
+        .unwrap();
         let imported_perf_prices = imported_perfume.get_prices();
         let perfume = Item::new(
             18.99,
             Imported::No,
-            Category::Other("Imported perfume".to_string()),
+            Category::Other("bottle of perfume".to_string()),
         )
         .unwrap();
         let perf_prices = perfume.get_prices();
