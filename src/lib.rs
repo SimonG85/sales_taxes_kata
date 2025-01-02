@@ -36,9 +36,24 @@ impl Item {
     }
 }
 
+fn round_numbers(number: f64) -> f64 {
+    (number * 20.0).round() / 20.0
+}
+
 impl Tax for Item {
     fn get_price(&self) -> f64 {
-        1.0
+        match (&self.category, &self.imported) {
+            (Category::Book | Category::Food | Category::Medical, Imported::No) => self.clean_price,
+            (Category::Other(_), Imported::No) => {
+                self.clean_price + round_numbers(self.clean_price * 0.10)
+            }
+            (Category::Book | Category::Food | Category::Medical, Imported::Yes) => {
+                self.clean_price + round_numbers(self.clean_price * (0.05))
+            }
+            (Category::Other(_), Imported::Yes) => {
+                self.clean_price + round_numbers(self.clean_price * (0.10 + 0.05))
+            }
+        }
     }
 }
 
@@ -61,19 +76,18 @@ mod tests {
         assert_relative_eq!(computed, expected, epsilon = f64::EPSILON);
     }
     #[test]
-    fn test_chocolate_bar() {
-        let chocolate_bar = Item::new(0.85, Imported::No, Category::Food).unwrap();
-        let computed = chocolate_bar.get_price();
-        let expected = 0.85;
+    fn test_imported_box_chocolates() {
+        let box_chocolates = Item::new(10.00, Imported::Yes, Category::Food).unwrap();
+        let computed = box_chocolates.get_price();
+        let expected = 10.50;
         assert_relative_eq!(computed, expected, epsilon = f64::EPSILON);
     }
-
-    // #[test]
-    // fn test_imported_box_of_chocolates() {
-    //     let box_of_choccolate = Item::new();
-    // }
-    // #[test]
-    // fn test_imported_box_of_chocolates() {
-    //     let box_of_choccolate = Item::new();
-    // }
+    #[test]
+    fn test_imported_perfume() {
+        let imported_perfume =
+            Item::new(47.50, Imported::Yes, Category::Other("Perfume".to_string())).unwrap();
+        let computed = imported_perfume.get_price();
+        let expected = 54.65;
+        assert_relative_eq!(computed, expected, epsilon = f64::EPSILON);
+    }
 }
