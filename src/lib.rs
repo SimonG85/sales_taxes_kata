@@ -246,6 +246,21 @@ mod item_to_string_tests {
         let music_cd_to_string = "1 music CD: 16.49".to_string();
         assert_eq!(music_cd.to_string(), music_cd_to_string);
     }
+    #[test]
+    fn test_parse_item_invalid_format() {
+        let input = "1 bottle of perfume 18.99";
+        assert!(Item::from_str(input).is_err());
+    }
+    #[test]
+    fn test_parse_item_invalid_price() {
+        let input = "1 bottle of perfume at invalid";
+        assert!(Item::from_str(input).is_err());
+    }
+    #[test]
+    fn test_parse_item_negative_price() {
+        let input = "1 bottle of perfume at -18.99";
+        assert!(Item::from_str(input).is_err());
+    }
 }
 
 #[cfg(test)]
@@ -256,10 +271,17 @@ mod string_to_item_tests {
     fn test_parse_item_imported_perfume() {
         let input = "1 imported bottle of perfume at 27.99";
         let item = Item::from_str(input).unwrap();
-
         assert!(matches!(item.imported, Imported::Yes));
         assert!(matches!(item.category, Category::Other(_)));
         assert_relative_eq!(item.clean_price, 27.99, epsilon = f64::EPSILON);
+    }
+    #[test]
+    fn test_parse_item_regular_perfume() {
+        let input = "1 bottle of perfume at 18.99";
+        let item = Item::from_str(input).unwrap();
+        assert!(matches!(item.imported, Imported::No));
+        assert!(matches!(item.category, Category::Other(_)));
+        assert_relative_eq!(item.clean_price, 18.99, epsilon = f64::EPSILON);
     }
 }
 
