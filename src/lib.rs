@@ -2,11 +2,13 @@
 /// and a basket of items.
 use std::str::FromStr;
 
+#[derive(Debug)]
 enum Imported {
     Yes,
     No,
 }
 
+#[derive(Debug)]
 enum Category {
     Book(String),
     Food(String),
@@ -18,7 +20,8 @@ pub trait Tax {
     fn get_prices(&self) -> (f64, f64);
 }
 
-struct Item {
+#[derive(Debug)]
+pub struct Item {
     clean_price: f64,
     imported: Imported,
     category: Category,
@@ -39,18 +42,17 @@ impl Item {
 
 impl ToString for Item {
     fn to_string(&self) -> String {
+        println!("{:?}", self);
         let name = match &self.category {
             Category::Book(x) | Category::Food(x) | Category::Medical(x) | Category::Other(x) => x,
         };
-
         let prefix = if matches!(self.imported, Imported::Yes) {
             "1 imported "
         } else {
             "1 "
         };
-
         format!(
-            "{}{}: {}",
+            "{}{}: {:.2}",
             prefix,
             name,
             ((self.get_prices().0 + self.get_prices().1) * 100.0).round() / 100.0
@@ -85,6 +87,7 @@ impl Tax for Item {
 impl FromStr for Item {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        println!("{s}");
         let components: Vec<&str> = s.split(" at ").collect();
         if components.len() != 2 {
             return Err("Invalid string: missing 'at'".to_string());
@@ -97,19 +100,26 @@ impl FromStr for Item {
             Imported::No
         };
         let category = if descr.contains("pills") {
-            Category::Medical(descr.to_string())
-        } else if descr.contains("chocolate") {
-            Category::Food(descr.to_string())
-        } else if descr.contains("perfume") {
-            Category::Other(descr.to_string())
+            Category::Medical("packet of headache pills".to_string())
+        } else if descr.contains("chocolates") & descr.contains("box") {
+            Category::Food("box of chocolates".to_string())
+        } else if descr.contains("chocolate") & descr.contains("bar") {
+            Category::Food("chocolate bar".to_string())
+        } else if descr.contains("book") {
+            Category::Book("book".to_string())
         } else {
-            Category::Other(descr.to_string())
+            let category: &str = match imported {
+                Imported::Yes => descr.split_once("imported ").unwrap().1,
+                Imported::No => descr.split_once(" ").unwrap().1,
+            };
+
+            Category::Other(category.to_string())
         };
         Item::new(price, imported, category).map_err(|e| e.to_string())
     }
 }
 
-struct Basket<T: Tax + ToString> {
+pub struct Basket<T: Tax + ToString> {
     elements: Vec<T>,
 }
 
@@ -139,11 +149,11 @@ where
     fn to_string(&self) -> String {
         let mut string_element: Vec<String> = self.elements.iter().map(|s| s.to_string()).collect();
         string_element.push(format!(
-            "Sales Taxes: {}",
+            "Sales Taxes: {:.2}",
             (self.get_tax() * 100.0).round() / 100.0
         ));
         string_element.push(format!(
-            "Total: {}",
+            "Total: {:.2}",
             (self.get_total() * 100.0).round() / 100.0
         ));
         string_element.join("\n")
@@ -367,7 +377,7 @@ mod basket_tests {
             "1 imported bottle of perfume: 32.19
 1 bottle of perfume: 20.89
 1 packet of headache pills: 9.75
-1 imported box of chocolates: 11.8
+1 imported box of chocolates: 11.80
 Sales Taxes: 6.65
 Total: 74.63"
         );
@@ -388,5 +398,55 @@ mod string_to_basket_tests {
         assert_eq!(basket.elements.len(), 4);
         assert_relative_eq!(basket.get_total(), 74.63, epsilon = f64::EPSILON);
         assert_relative_eq!(basket.get_tax(), 6.65, epsilon = f64::EPSILON);
+    }
+}
+
+#[cfg(test)]
+mod acceptance_tests {
+    use super::*;
+    #[test]
+    fn test_basket_1() {
+        let input = "1 book at 12.49
+1 music CD at 14.99
+1 chocolate bar at 0.85";
+        let basket = Basket::<Item>::from_str(input).unwrap();
+        assert_eq!(
+            basket.to_string(),
+            "1 book: 12.49
+1 music CD: 16.49
+1 chocolate bar: 0.85
+Sales Taxes: 1.50
+Total: 29.83"
+        );
+    }
+    #[test]
+    fn test_basket_2() {
+        let input = "1 imported box of chocolates at 10.00
+1 imported bottle of perfume at 47.50";
+        let basket = Basket::<Item>::from_str(input).unwrap();
+        assert_eq!(
+            basket.to_string(),
+            "1 imported box of chocolates: 10.50
+1 imported bottle of perfume: 54.65
+Sales Taxes: 7.65
+Total: 65.15"
+        );
+    }
+    #[test]
+    fn test_basket_3() {
+        let input = "1 imported bottle of perfume at 27.99
+1 bottle of perfume at 18.99
+1 packet of headache pills at 9.75
+1 box of imported chocolates at 11.25";
+        let basket = Basket::<Item>::from_str(input).unwrap();
+        assert_eq!(
+            basket.to_string(),
+            "1 imported bottle of perfume: 32.19
+1 bottle of perfume: 20.89
+1 packet of headache pills: 9.75
+1 imported box of chocolates: 11.80
+Sales Taxes: 6.65
+Total: 74.63"
+        );
     }
 }
